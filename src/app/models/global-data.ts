@@ -1,8 +1,8 @@
 export interface GlobalDataSummary{
     country?:string,
-    confirmed?:string,
-    deaths?:string,
-    recovered?:string,
-    active?:string
+    confirmed?:number,
+    deaths?:number,
+    recovered?:number,
+    active?:number
 
 }

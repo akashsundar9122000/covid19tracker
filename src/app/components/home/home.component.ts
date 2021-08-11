@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { GoogleChartInterface } from 'ng2-google-charts';
-import { GlobalDataSummary } from 'src/app/models/global-data';
 import { DataServiceService } from 'src/app/services/data-service.service';
+import { GlobalDataSummary } from 'src/app/models/global-data';
 
 @Component({
   selector: 'app-home',
@@ -9,64 +8,100 @@ import { DataServiceService } from 'src/app/services/data-service.service';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
-  totalConfirmed :any=0;
-  totalActive :any=0;
-  totalRecovered :any=0;
-  totalDeaths :any=0;
-  globalData: GlobalDataSummary[]=[];
-  pieChart: GoogleChartInterface={
-    chartType:'pieChart'
-  }
 
-  columnChart: GoogleChartInterface={
-    chartType:'columnChart'
-  }
-  constructor(private dataService:DataServiceService) { }
-
-  initChart(){
-
-    let dataTable=[];
-    dataTable.push(["Country","Cases"]);
-    this.globalData.forEach(cs=>{
-      if(cs.confirmed && +cs.confirmed>1000000)
-        dataTable.push([cs.country,cs.confirmed]);
-    })
-    this.pieChart = {
-      chartType: 'PieChart',
-      dataTable:dataTable,
-      //firstRowIsData: true,
-      options: {
-        height:500
+  totalConfirmed = 0;
+  totalActive = 0;
+  totalDeaths = 0;
+  totalRecovered = 0;
+  loading = true;
+  globalData: GlobalDataSummary[] =[];
+  datatable:any = [];
+  chart = {
+    PieChart : "PieChart" ,
+    ColumnChart : 'ColumnChart' ,
+    LineChart : "LineChart", 
+    height: 500, 
+    options: {
+      animation:{
+        duration: 1000,
+        easing: 'out',
       },
-    };
-    this.columnChart = {
-      chartType: 'ColumnChart',
-      dataTable:dataTable,
-      //firstRowIsData: true,
-      options: {
-        height:500
-      },
-    };
-  }
-  ngOnInit(): void {
-    this.dataService.getGlobalData().subscribe(
-      {
-        next:(result)=>{
-          console.log(result);
-          this.globalData=result;
-          result.forEach(cs=>{
-            if(!Number.isNaN(cs.confirmed)){
-              this.totalActive+=cs.active;
-              this.totalConfirmed+=cs.confirmed;
-              this.totalDeaths+=cs.deaths;
-              this.totalRecovered+=cs.recovered;
-            }
-          })
-          this.initChart();
-        }
-      }
-    )
+      is3D: true
+    }  
   }
   
+  
+  constructor(private dataService: DataServiceService) { }
+
+
+  
+  ngOnInit(): void {
+
+    this.dataService.getGlobalData()
+      .subscribe(
+        {
+          next: (result) => {
+            console.log(result);
+            this.globalData = result;
+            result.forEach(cs => {
+              if (!Number.isNaN(cs.confirmed)) {
+                if(cs.active)
+                this.totalActive += cs.active
+                if(cs.confirmed)
+                this.totalConfirmed += cs.confirmed
+                if(cs.deaths)
+                this.totalDeaths += cs.deaths
+                if(cs.active)
+                this.totalRecovered += cs.active
+              }
+
+            })
+
+            this.initChart('c');
+          }, 
+          complete : ()=>{
+            this.loading = false;
+          }
+        }
+      )
+  }
+
+
+
+  updateChart(input: HTMLInputElement) {
+    console.log(input.value);
+    this.initChart(input.value)
+  }
+
+  initChart(caseType: string) {
+
+    this.datatable = [];
+    // this.datatable.push(["Country", "Cases"])
+    
+    this.globalData.forEach(cs => {
+      let value :number =0 ;
+      if (caseType == 'c' && cs.confirmed)
+        if (cs.confirmed > 200000)
+          value = cs.confirmed
+          
+      if (caseType == 'a' && cs.active)
+        if (cs.active > 200000)
+          value = cs.active
+      if (caseType == 'd' && cs.deaths)
+        if (cs.deaths > 10000)
+          value = cs.deaths
+          
+      if (caseType == 'r' && cs.recovered)
+        if (cs.recovered > 200000)
+            value = cs.recovered
+        
+        if(cs.country)
+        this.datatable.push([
+            cs.country, value
+          ])
+    })
+    console.log(this.datatable);
+
+  }
 
 }
